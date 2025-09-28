@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sport-pp - 您的健身伙伴</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6', // 清新蓝色作为主色调
+                        secondary: '#10B981', // 自然绿色作为辅助色
+                        accent: '#F59E0B', // 活力橙色作为强调色
+                        light: '#F3F4F6', // 浅色背景
+                        dark: '#1F2937'   // 深色文本
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark antialiased">
+    <!-- 页面加载遮罩 -->
+    <div id="loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div class="flex flex-col items-center">
+            <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 text-primary font-medium">加载中...</p>
+        </div>
+    </div>
+
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-dark">欢迎来到 sport-pp</h2>
+                <p class="text-gray-500 mt-2">填写信息开始您的健身之旅</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">姓名</label>
+                    <input type="text" id="name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" required>
+                </div>
+                
+                <div>
+                    <label for="age" class="block text-sm font-medium text-gray-700">年龄</label>
+                    <input type="number" id="age" min="1" max="120" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" required>
+                </div>
+                
+                <div>
+                    <label for="weight" class="block text-sm font-medium text-gray-700">体重(kg)</label>
+                    <input type="number" id="weight" min="1" max="300" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" required>
+                </div>
+                
+                <div>
+                    <label for="goal" class="block text-sm font-medium text-gray-700">健身目标</label>
+                    <select id="goal" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" required>
+                        <option value="">请选择您的目标</option>
+                        <option value="lose">减重</option>
+                        <option value="gain">增重</option>
+                        <option value="health">养生</option>
+                        <option value="fitness">健体</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150 ease-in-out">
+                        开始健身之旅
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 主应用容器 -->
+    <div id="app" class="hidden flex flex-col min-h-screen">
+        <!-- 顶部导航栏 -->
+        <header class="sticky top-0 z-30 bg-white bg-opacity-95 shadow-sm backdrop-blur-sm">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center h-16">
+                    <!-- 品牌标志 -->
+                    <div class="flex items-center">
+                        <a href="#" class="flex items-center">
+                            <i class="fa fa-heartbeat text-2xl text-secondary mr-2"></i>
+                            <span class="text-xl font-bold text-dark">sport-pp</span>
+                        </a>
+                    </div>
+                    
+                    <!-- 导航链接 - 桌面版 -->
+                    <nav class="hidden md:flex space-x-8">
+                        <a href="#home" class="text-gray-700 hover:text-primary font-medium transition-colors duration-200 nav-link active">首页</a>
+                        <a href="#community" class="text-gray-700 hover:text-primary font-medium transition-colors duration-200 nav-link">社区</a>
+                        <a href="#challenges" class="text-gray-700 hover:text-primary font-medium transition-colors duration-200 nav-link">比赛</a>
+                        <a href="#ai-coach" class="text-gray-700 hover:text-primary font-medium transition-colors duration-200 nav-link">AI健身搭子</a>
+                    </nav>
+                    
+                    <!-- 用户菜单 -->
+                    <div class="flex items-center space-x-4">
+                        <button id="notificationsBtn" class="text-gray-700 hover:text-primary relative transition-colors duration-200">
+                            <i class="fa fa-bell-o text-xl"></i>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-accent rounded-full"></span>
+                        </button>
+                        
+                        <div class="relative group">
+                            <button id="userMenuBtn" class="flex items-center focus:outline-none">
+                                <img id="userAvatar" src="https://picsum.photos/200/200?random=1" alt="用户头像" class="h-8 w-8 rounded-full object-cover border-2 border-primary">
+                            </button>
+                            
+                            <!-- 用户下拉菜单 -->
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block">
+                                <a href="#profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-light">个人中心</a>
+                                <a href="#wallet" class="block px-4 py-2 text-sm text-gray-700 hover:bg-light">我的钱包</a>
+                                <a href="#settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-light">设置</a>
+                                <div class="border-t border-gray-100 my-1"></div>
+                                <a href="#" id="logoutBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-light">退出登录</a>
+                            </div>
+                        </div>
+                        
+                        <!-- 移动端菜单按钮 -->
+                        <button id="mobileMenuBtn" class="md:hidden text-gray-700 hover:text-primary">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 移动端导航菜单 -->
+            <div id="mobileMenu" class="md:hidden hidden bg-white border-t">
+                <div class="container mx-auto px-4 py-3 space-y-2">
+                    <a href="#home" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-light mobile-nav-link active">首页</a>
+                    <a href="#community" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-light mobile-nav-link">社区</a>
+                    <a href="#challenges" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-light mobile-nav-link">比赛</a>
+                    <a href="#ai-coach" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-light mobile-nav-link">AI健身搭子</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="flex-grow">
+            <!-- 首页部分 -->
+            <section id="home" class="py-12 md:py-20">
+                <div class="container mx-auto px-4">
+                    <!-- 用户健身数据概览 -->
+                    <div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                            <div>
+                                <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-dark">嗨，<span id="userName">健身爱好者</span>！</h2>
+                                <p class="text-gray-500">继续保持，您已经走在正确的道路上了</p>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex space-x-3">
+                                <button id="startWorkoutBtn" class="px-4 py-2 bg-secondary text-white rounded-lg shadow-sm hover:bg-secondary/90 transition duration-200 flex items-center">
+                                    <i class="fa fa-play-circle mr-2"></i> 开始今日训练
+                                </button>
+                                <button id="generateReportBtn" class="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90 transition duration-200 flex items-center">
+                                    <i class="fa fa-file-text-o mr-2"></i> 生成健康报告
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 数据卡片 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-light rounded-xl p-5 card-hover">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-gray-500 text-sm">本周活动</p>
+                                        <h3 class="text-2xl font-bold mt-1">5<span class="text-base font-normal text-gray-500 ml-1">天</span></h3>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                        <i class="fa fa-calendar"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 text-sm text-green-600 flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 比上周多2天
+                                </div>
+                            </div>
+                            
+                            <div class="bg-light rounded-xl p-5 card-hover">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-gray-500 text-sm">已燃烧</p>
+                                        <h3 class="text-2xl font-bold mt-1">1,240<span class="text-base font-normal text-gray-500 ml-1">卡路里</span></h3>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                                        <i class="fa fa-fire"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 text-sm text-green-600 flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 比上周多320
+                                </div>
+                            </div>
+                            
+                            <div class="bg-light rounded-xl p-5 card-hover">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-gray-500 text-sm">跑步距离</p>
+                                        <h3 class="text-2xl font-bold mt-1">12.5<span class="text-base font-normal text-gray-500 ml-1">公里</span></h3>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                                        <i class="fa fa-heartbeat"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 text-sm text-red-600 flex items-center">
+                                    <i class="fa fa-arrow-down mr-1"></i> 比上周少2.3公里
+                                </div>
+                            </div>
+                            
+                            <div class="bg-light rounded-xl p-5 card-hover">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-gray-500 text-sm">完成目标</p>
+                                        <h3 class="text-2xl font-bold mt-1">68<span class="text-base font-normal text-gray-500 ml-1">%</span></h3>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                        <i class="fa fa-trophy"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 text-sm text-green-600 flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 比上周提高12%
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 活动图表 -->
+                        <div class="mt-8">
+                            <h3 class="text-lg font-semibold mb-4">近期活动趋势</h3>
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <canvas id="activityChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 推荐内容 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- 左侧：推荐训练 -->
+                        <div class="lg:col-span-2">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-bold">为您推荐的训练</h2>
+                                <a href="#" class="text-primary hover:text-primary/80 font-medium text-sm flex items-center">
+                                    查看全部 <i class="fa fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-white rounded-xl overflow-hidden shadow-sm card-hover">
+                                    <div class="relative">
+                                        <img src="https://picsum.photos/600/300?random=10" alt="减脂训练" class="w-full h-48 object-cover">
+                                        <div class="absolute top-3 left-3 bg-accent text-white text-xs font-bold px-2 py-1 rounded">热门</div>
+                                    </div>
+                                    <div class="p-5">
+                                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                                            <span class="flex items-center mr-3"><i class="fa fa-clock-o mr-1"></i> 30分钟</span>
+                                            <span class="flex items-center"><i class="fa fa-fire mr-1"></i> 320卡路里</span>
+                                        </div>
+                                        <h3 class="font-bold text-lg mb-2">高效减脂训练</h3>
+                                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">针对您的减重目标设计的全身训练，帮助快速燃烧脂肪，提升代谢率。</p>
+                                        <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                            开始训练
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-xl overflow-hidden shadow-sm card-hover">
+                                    <div class="relative">
+                                        <img src="https://picsum.photos/600/300?random=11" alt="核心力量训练" class="w-full h-48 object-cover">
+                                    </div>
+                                    <div class="p-5">
+                                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                                            <span class="flex items-center mr-3"><i class="fa fa-clock-o mr-1"></i> 45分钟</span>
+                                            <span class="flex items-center"><i class="fa fa-fire mr-1"></i> 450卡路里</span>
+                                        </div>
+                                        <h3 class="font-bold text-lg mb-2">核心力量训练</h3>
+                                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">增强核心肌群力量，改善体态，适合您的健体目标，提升整体运动表现。</p>
+                                        <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                            开始训练
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧：即将开始的比赛 -->
+                        <div>
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-bold">即将开始的比赛</h2>
+                                <a href="#challenges" class="text-primary hover:text-primary/80 font-medium text-sm flex items-center">
+                                    全部比赛 <i class="fa fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                                <div class="p-5 border-b border-gray-100">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="font-bold">城市马拉松挑战</h3>
+                                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">3天后开始</span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm mb-4">在7天内完成最多跑步公里数，前三名可获得限量版运动徽章</p>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-500"><i class="fa fa-users mr-1"></i> 已有128人报名</span>
+                                        <button class="px-3 py-1.5 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition duration-200">
+                                            立即报名
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-5 border-b border-gray-100">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="font-bold">30天健身打卡</h3>
+                                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">进行中</span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm mb-4">连续30天完成健身打卡，坚持最久的用户获得专属头像框</p>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-500"><i class="fa fa-users mr-1"></i> 已有356人参与</span>
+                                        <button class="px-3 py-1.5 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition duration-200">
+                                            我要参加
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-5">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="font-bold">游泳耐力挑战</h3>
+                                        <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">1周后开始</span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm mb-4">在5天内累计游泳距离最长者获胜，获得定制化数字勋章</p>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-500"><i class="fa fa-users mr-1"></i> 已有74人报名</span>
+                                        <button class="px-3 py-1.5 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition duration-200">
+                                            立即报名
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 社区部分 -->
+            <section id="community" class="py-12 md:py-20 bg-light">
+                <div class="container mx-auto px-4">
+                    <div class="text-center mb-10">
+                        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-3">加入我们的健身社区</h2>
+                        <p class="text-gray-600 max-w-2xl mx-auto">分享您的健身成果，获取灵感，与志同道合的伙伴一起进步</p>
+                    </div>
+                    
+                    <!-- 发布动态区域 -->
+                    <div class="bg-white rounded-xl shadow-sm p-5 mb-8">
+                        <div class="flex space-x-4">
+                            <img src="https://picsum.photos/200/200?random=1" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                            <div class="flex-grow">
+                                <textarea placeholder="分享您的健身心得、照片或视频..." class="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none" rows="3"></textarea>
+                                <div class="flex justify-between items-center mt-3">
+                                    <div class="flex space-x-4">
+                                        <button class="text-gray-500 hover:text-primary transition-colors duration-200 flex items-center">
+                                            <i class="fa fa-image mr-1"></i> 图片
+                                        </button>
+                                        <button class="text-gray-500 hover:text-primary transition-colors duration-200 flex items-center">
+                                            <i class="fa fa-video-camera mr-1"></i> 视频
+                                        </button>
+                                        <button class="text-gray-500 hover:text-primary transition-colors duration-200 flex items-center">
+                                            <i class="fa fa-map-marker mr-1"></i> 地点
+                                        </button>
+                                    </div>
+                                    <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                        发布
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 社区内容 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- 主内容区 -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- 社区帖子1 -->
+                            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                                <div class="p-5">
+                                    <div class="flex items-center space-x-3 mb-4">
+                                        <img src="https://picsum.photos/200/200?random=2" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                                        <div>
+                                            <h4 class="font-medium">张健身</h4>
+                                            <p class="text-xs text-gray-500">2小时前</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-700 mb-4">今天完成了10公里长跑，突破了个人最佳成绩！坚持训练三个月，终于看到了进步，继续加油！💪</p>
+                                    <img src="https://picsum.photos/800/450?random=20" alt="跑步成绩" class="w-full h-64 object-cover rounded-lg mb-4">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex space-x-6">
+                                            <button class="flex items-center text-gray-500 hover:text-primary transition-colors duration-200">
+                                                <i class="fa fa-heart-o mr-1"></i> <span>128</span>
+                                            </button>
+                                            <button class="flex items-center text-gray-500 hover:text-primary transition-colors duration-200">
+                                                <i class="fa fa-comment-o mr-1"></i> <span>32</span>
+                                            </button>
+                                            <button class="flex items-center text-gray-500 hover:text-primary transition-colors duration-200">
+                                                <i class="fa fa-share mr-1"></i> <span>8</span>
+                                            </button>
+                                        </div>
+                                        <button class="text-gray-500 hover:text-primary transition-colors duration-200">
+                                            <i class="fa fa-ellipsis-h"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="bg-light px-5 py-3 flex items-center justify-between">
+                                    <div class="text-sm text-gray-500"><i class="fa fa-eye mr-1"></i> 3.2k 次观看</div>
+                                    <button class="text-sm text-primary hover:text-primary/80 font-medium">
+                                        推广 (2.99美元)
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 社区帖子2 -->
+                            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                                <div class="p-5">
+                                    <div class="flex items-center space-x-3 mb-4">
+                                        <img src="https://picsum.photos/200/200?random=3" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                                        <div>
+                                            <h4 class="font-medium">李力量</h4>
+                                            <p class="text-xs text-gray-500">昨天 18:30</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-700 mb-4">分享一下我的手臂训练成果，坚持了半年，二头肌明显增大了！感谢sport-pp上的训练计划指导！</p>
+                                    <div class="grid grid-cols-2 gap-2 mb-4">
+                                        <img src="https://picsum.photos/400/400?random=21" alt="健身成果" class="w-full h-40 object-cover rounded-lg">
+                                        <img src="https://picsum.photos/400/400?random=22" alt="健身成果" class="w-full h-40 object-cover rounded-lg">
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex space-x-6">
+                                            <button class="flex items-center text-gray-500 hover:text-primary transition-colors duration-200">
+                                                <i class="fa fa-heart-o mr-1"></i> <span>256</span>
+                                            </button>
+                                            <button class="flex items-center text-gray-500 hover:text-primary transition-colors duration-200">
+                                                <i class="fa fa-comment-o mr-1"></i> <span>48</span>
+                                            </button>
+                                            <button class="flex items-center text-gray-500 hover:text-primary transition-colors duration-200">
+                                                <i class="fa fa-share mr-1"></i> <span>15</span>
+                                            </button>
+                                        </div>
+                                        <button class="text-gray-500 hover:text-primary transition-colors duration-200">
+                                            <i class="fa fa-ellipsis-h"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="bg-light px-5 py-3 flex items-center justify-between">
+                                    <div class="text-sm text-gray-500"><i class="fa fa-eye mr-1"></i> 5.7k 次观看</div>
+                                    <button class="text-sm text-primary hover:text-primary/80 font-medium">
+                                        推广 (2.99美元)
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 加载更多 -->
+                            <div class="text-center">
+                                <button class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-light transition duration-200">
+                                    加载更多 <i class="fa fa-refresh ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 侧边栏 -->
+                        <div>
+                            <!-- 热门话题 -->
+                            <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+                                <h3 class="font-bold text-lg mb-4">热门话题</h3>
+                                <div class="space-y-3">
+                                    <a href="#" class="flex items-center justify-between p-2 hover:bg-light rounded-lg transition duration-200">
+                                        <div class="flex items-center">
+                                            <span class="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                                            <span>#30天挑战#</span>
+                                        </div>
+                                        <span class="text-gray-500 text-sm">1.2k 帖子</span>
+                                    </a>
+                                    <a href="#" class="flex items-center justify-between p-2 hover:bg-light rounded-lg transition duration-200">
+                                        <div class="flex items-center">
+                                            <span class="w-2 h-2 bg-secondary rounded-full mr-2"></span>
+                                            <span>#健身食谱#</span>
+                                        </div>
+                                        <span class="text-gray-500 text-sm">856 帖子</span>
+                                    </a>
+                                    <a href="#" class="flex items-center justify-between p-2 hover:bg-light rounded-lg transition duration-200">
+                                        <div class="flex items-center">
+                                            <span class="w-2 h-2 bg-accent rounded-full mr-2"></span>
+                                            <span>#居家训练#</span>
+                                        </div>
+                                        <span class="text-gray-500 text-sm">632 帖子</span>
+                                    </a>
+                                    <a href="#" class="flex items-center justify-between p-2 hover:bg-light rounded-lg transition duration-200">
+                                        <div class="flex items-center">
+                                            <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                                            <span>#跑步技巧#</span>
+                                        </div>
+                                        <span class="text-gray-500 text-sm">498 帖子</span>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- 活跃用户 -->
+                            <div class="bg-white rounded-xl shadow-sm p-5">
+                                <h3 class="font-bold text-lg mb-4">活跃用户</h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <img src="https://picsum.photos/200/200?random=4" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                                            <div>
+                                                <h4 class="font-medium text-sm">王铁人</h4>
+                                                <p class="text-xs text-gray-500">连续打卡45天</p>
+                                            </div>
+                                        </div>
+                                        <button class="text-xs px-2 py-1 border border-primary text-primary rounded-full hover:bg-primary hover:text-white transition duration-200">
+                                            关注
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <img src="https://picsum.photos/200/200?random=5" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                                            <div>
+                                                <h4 class="font-medium text-sm">赵瑜伽</h4>
+                                                <p class="text-xs text-gray-500">瑜伽达人</p>
+                                            </div>
+                                        </div>
+                                        <button class="text-xs px-2 py-1 border border-primary text-primary rounded-full hover:bg-primary hover:text-white transition duration-200">
+                                            关注
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <img src="https://picsum.photos/200/200?random=6" alt="用户头像" class="w-10 h-10 rounded-full object-cover">
+                                            <div>
+                                                <h4 class="font-medium text-sm">陈教练</h4>
+                                                <p class="text-xs text-gray-500">专业健身教练</p>
+                                            </div>
+                                        </div>
+                                        <button class="text-xs px-2 py-1 border border-primary text-primary rounded-full hover:bg-primary hover:text-white transition duration-200">
+                                            关注
+                                        </button>
+                                    </div>
+                                </div>
+                                <button class="w-full mt-4 py-2 text-center text-primary hover:text-primary/80 text-sm font-medium">
+                                    查看更多
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 比赛部分 -->
+            <section id="challenges" class="py-12 md:py-20">
+                <div class="container mx-auto px-4">
+                    <div class="text-center mb-10">
+                        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-3">参与健身比赛</h2>
+                        <p class="text-gray-600 max-w-2xl mx-auto">挑战自我，与其他用户竞争，赢取专属奖励和荣誉</p>
+                    </div>
+                    
+                    <!-- 比赛分类标签 -->
+                    <div class="flex flex-wrap justify-center gap-3 mb-10">
+                        <button class="px-4 py-2 bg-primary text-white rounded-full text-sm font-medium">全部比赛</button>
+                        <button class="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium hover:bg-light transition duration-200">跑步</button>
+                        <button class="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium hover:bg-light transition duration-200">游泳</button>
+                        <button class="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium hover:bg-light transition duration-200">骑行</button>
+                        <button class="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium hover:bg-light transition duration-200">力量</button>
+                        <button class="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium hover:bg-light transition duration-200">瑜伽</button>
+                        <button class="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium hover:bg-light transition duration-200">综合</button>
+                    </div>
+                    
+                    <!-- 比赛列表 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- 比赛1 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+                            <div class="relative">
+                                <img src="https://picsum.photos/600/300?random=30" alt="城市马拉松挑战" class="w-full h-48 object-cover">
+                                <div class="absolute top-3 left-3 bg-accent text-white text-xs font-bold px-2 py-1 rounded">热门</div>
+                                <div class="absolute top-3 right-3 bg-white bg-opacity-80 text-dark text-xs font-bold px-2 py-1 rounded backdrop-blur-sm">
+                                    跑步
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <h3 class="font-bold text-lg mb-2">城市马拉松挑战</h3>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">在7天内完成最多跑步公里数，测试您的耐力和毅力，赢取限量版运动徽章。</p>
+                                
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-calendar mr-1"></i> 时间</span>
+                                        <span class="font-medium">6月15日 - 6月21日</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-trophy mr-1"></i> 奖励</span>
+                                        <span class="font-medium">限量版马拉松徽章</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-users mr-1"></i> 参与者</span>
+                                        <span class="font-medium">128人</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                    立即报名
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 比赛2 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+                            <div class="relative">
+                                <img src="https://picsum.photos/600/300?random=31" alt="30天健身打卡" class="w-full h-48 object-cover">
+                                <div class="absolute top-3 right-3 bg-white bg-opacity-80 text-dark text-xs font-bold px-2 py-1 rounded backdrop-blur-sm">
+                                    综合
+                                </div>
+                                <div class="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                    进行中
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <h3 class="font-bold text-lg mb-2">30天健身打卡</h3>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">连续30天完成健身打卡，无论何种运动，坚持最久的用户获得专属头像框。</p>
+                                
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-calendar mr-1"></i> 时间</span>
+                                        <span class="font-medium">6月1日 - 6月30日</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-trophy mr-1"></i> 奖励</span>
+                                        <span class="font-medium">专属头像框</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-users mr-1"></i> 参与者</span>
+                                        <span class="font-medium">356人</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                    我要参加
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 比赛3 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+                            <div class="relative">
+                                <img src="https://picsum.photos/600/300?random=32" alt="游泳耐力挑战" class="w-full h-48 object-cover">
+                                <div class="absolute top-3 right-3 bg-white bg-opacity-80 text-dark text-xs font-bold px-2 py-1 rounded backdrop-blur-sm">
+                                    游泳
+                                </div>
+                                <div class="absolute top-3 left-3 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                    即将开始
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <h3 class="font-bold text-lg mb-2">游泳耐力挑战</h3>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">在5天内累计游泳距离最长者获胜，考验您的水性和耐力，获得定制化数字勋章。</p>
+                                
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-calendar mr-1"></i> 时间</span>
+                                        <span class="font-medium">6月22日 - 6月26日</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-trophy mr-1"></i> 奖励</span>
+                                        <span class="font-medium">定制化数字勋章</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-users mr-1"></i> 参与者</span>
+                                        <span class="font-medium">74人</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                    立即报名
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 比赛4 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+                            <div class="relative">
+                                <img src="https://picsum.photos/600/300?random=33" alt="力量训练大师" class="w-full h-48 object-cover">
+                                <div class="absolute top-3 right-3 bg-white bg-opacity-80 text-dark text-xs font-bold px-2 py-1 rounded backdrop-blur-sm">
+                                    力量
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <h3 class="font-bold text-lg mb-2">力量训练大师</h3>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">比拼深蹲、卧推和硬拉的最大重量总和，展示您的力量，赢取"力量大师"称号。</p>
+                                
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-calendar mr-1"></i> 时间</span>
+                                        <span class="font-medium">6月20日 - 6月27日</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-trophy mr-1"></i> 奖励</span>
+                                        <span class="font-medium">"力量大师"称号</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-users mr-1"></i> 参与者</span>
+                                        <span class="font-medium">42人</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                    立即报名
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 比赛5 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+                            <div class="relative">
+                                <img src="https://picsum.photos/600/300?random=34" alt="瑜伽挑战" class="w-full h-48 object-cover">
+                                <div class="absolute top-3 right-3 bg-white bg-opacity-80 text-dark text-xs font-bold px-2 py-1 rounded backdrop-blur-sm">
+                                    瑜伽
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <h3 class="font-bold text-lg mb-2">7天瑜伽挑战</h3>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">连续7天完成指定瑜伽课程，提升柔韧性和平衡感，最佳表现者获得瑜伽大师勋章。</p>
+                                
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-calendar mr-1"></i> 时间</span>
+                                        <span class="font-medium">6月25日 - 7月1日</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-trophy mr-1"></i> 奖励</span>
+                                        <span class="font-medium">瑜伽大师勋章</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-users mr-1"></i> 参与者</span>
+                                        <span class="font-medium">93人</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                    立即报名
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 比赛6 -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+                            <div class="relative">
+                                <img src="https://picsum.photos/600/300?random=35" alt="骑行挑战" class="w-full h-48 object-cover">
+                                <div class="absolute top-3 right-3 bg-white bg-opacity-80 text-dark text-xs font-bold px-2 py-1 rounded backdrop-blur-sm">
+                                    骑行
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <h3 class="font-bold text-lg mb-2">周末骑行挑战</h3>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">周末两天内骑行距离最长者获胜，探索城市周边风光，赢取专业骑行装备折扣券。</p>
+                                
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-calendar mr-1"></i> 时间</span>
+                                        <span class="font-medium">6月24日 - 6月25日</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-trophy mr-1"></i> 奖励</span>
+                                        <span class="font-medium">骑行装备折扣券</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500"><i class="fa fa-users mr-1"></i> 参与者</span>
+                                        <span class="font-medium">56人</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition duration-200">
+                                    立即报名
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 查看更多按钮 -->
+                    <div class="text-center mt-10">
+                        <button class="px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-light transition duration-200">
+                            查看更多比赛 <i class="fa fa-arrow-down ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- AI健身搭子部分 -->
+            <section id="ai-coach" class="py-12 md:py-20 bg-gradient-to-br from-blue-50 to-green-50">
+                <div class="container mx-auto px-4">
+                    <div class="text-center mb-10">
+                        <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-3">AI健身搭子</h2>
+                        <p class="text-gray-600 max-w-2xl mx-auto">您的专属AI健身伙伴，随时为您提供指导和鼓励</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                        <!-- 左侧：AI功能介绍 -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-xl shadow-sm p-6 h-full">
+                                <h3 class="text-xl font-bold mb-6">AI健身搭子能为您做什么？</h3>
+                                
+                                <div class="space-y-6">
+                                    <div class="flex space-x-4">
+                                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                            <i class="fa fa-calendar-check-o text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold mb-1">制定个性化计划</h4>
+                                            <p class="text-gray-600 text-sm">根据您的目标、年龄和身体状况，制定专属健身计划</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-4">
+                                        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0">
+                                            <i class="fa fa-comments-o text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold mb-1">实时聊天指导</h4>
+                                            <p class="text-gray-600 text-sm">随时解答您的健身疑问，提供专业建议</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-4">
+                                        <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+                                            <i class="fa fa-line-chart text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold mb-1">跟踪训练进度</h4>
+                                            <p class="text-gray-600 text-sm">记录您的训练数据，分析进步，调整计划</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-4">
+                                        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
+                                            <i class="fa fa-cutlery text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold mb-1">营养建议</h4>
+                                            <p class="text-gray-600 text-sm">根据您的目标提供饮食建议，帮助您更快达成目标</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-8 pt-6 border-t border-gray-100">
+                                    <div class="bg-light rounded-xl p-5">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h4 class="font-bold">订阅AI健身搭子</h4>
+                                            <span class="text-2xl font-bold text-primary">$9.99</span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm mb-5">每月订阅，随时取消，获得全天候AI健身指导</p>
+                                        <button id="subscribeAI" class="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200 flex items-center justify-center">
+                                            <i class="fa fa-rocket mr-2"></i> 立即订阅
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧：AI聊天界面 -->
+                        <div class="lg:col-span-3">
+                            <div class="bg-white rounded-xl shadow-sm overflow-hidden h-full flex flex-col">
+                                <!-- 聊天头部 -->
+                                <div class="bg-primary text-white p-5">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-3">
+                                            <i class="fa fa-robot"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold">AI健身搭子</h3>
+                                            <p class="text-xs text-white text-opacity-80">在线 · 随时为您服务</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 聊天内容区 -->
+                                <div id="chatMessages" class="flex-grow p-5 overflow-y-auto space-y-6">
+                                    <!-- AI消息 -->
+                                    <div class="flex space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                            <i class="fa fa-robot text-sm"></i>
+                                        </div>
+                                        <div class="max-w-[80%]">
+                                            <p class="bg-light rounded-lg rounded-tl-none p-3 text-sm">
+                                                嗨！我是您的AI健身搭子，很高兴能帮助您达成健身目标。请问今天有什么可以帮您的吗？
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1">10:00</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 用户消息 -->
+                                    <div class="flex space-x-3 justify-end">
+                                        <div class="max-w-[80%]">
+                                            <p class="bg-primary text-white rounded-lg rounded-tr-none p-3 text-sm">
+                                                我想减重来着，今天应该做什么运动呢？
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1 text-right">10:02</p>
+                                        </div>
+                                        <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                            <img src="https://picsum.photos/200/200?random=1" alt="用户头像" class="w-full h-full object-cover">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- AI消息 -->
+                                    <div class="flex space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                            <i class="fa fa-robot text-sm"></i>
+                                        </div>
+                                        <div class="max-w-[80%]">
+                                            <p class="bg-light rounded-lg rounded-tl-none p-3 text-sm">
+                                                减重的话，建议您今天进行30分钟的有氧运动，比如慢跑、游泳或者跳绳。这些运动能有效燃烧卡路里。之后可以做10分钟的核心训练，帮助塑造身形。需要我为您提供具体的动作指导吗？
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1">10:05</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 聊天输入区 -->
+                                <div class="p-5 border-t border-gray-100">
+                                    <div class="flex space-x-3">
+                                        <input type="text" id="chatInput" placeholder="输入您的问题..." class="flex-grow px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <button id="sendMessage" class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition duration-200">
+                                            <i class="fa fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 个人中心部分 -->
+            <section id="profile" class="py-12 md:py-20 hidden">
+                <div class="container mx-auto px-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                        <!-- 左侧：个人信息 -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+                                <div class="text-center mb-6">
+                                    <div class="relative inline-block">
+                                        <img id="profileAvatar" src="https://picsum.photos/200/200?random=1" alt="用户头像" class="w-32 h-32 rounded-full object-cover border-4 border-primary">
+                                        <button id="changeAvatar" class="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary/90 transition duration-200">
+                                            <i class="fa fa-camera"></i>
+                                        </button>
+                                    </div>
+                                    <h3 id="profileName" class="font-bold text-xl mt-4">健身爱好者</h3>
+                                    <p class="text-gray-500 text-sm">加入于 2023年6月</p>
+                                    
+                                    <div class="flex justify-center space-x-4 mt-4">
+                                        <div class="text-center">
+                                            <p class="font-bold">128</p>
+                                            <p class="text-xs text-gray-500">关注</p>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="font-bold">356</p>
+                                            <p class="text-xs text-gray-500">粉丝</p>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="font-bold">42</p>
+                                            <p class="text-xs text-gray-500">动态</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <a href="#profile" class="flex items-center p-3 bg-light rounded-lg text-primary font-medium">
+                                        <i class="fa fa-user-o w-6"></i>
+                                        <span class="ml-3">个人信息</span>
+                                    </a>
+                                    <a href="#my-posts" class="flex items-center p-3 hover:bg-light rounded-lg text-gray-700 font-medium transition duration-200">
+                                        <i class="fa fa-picture-o w-6"></i>
+                                        <span class="ml-3">我的动态</span>
+                                    </a>
+                                    <a href="#wallet" class="flex items-center p-3 hover:bg-light rounded-lg text-gray-700 font-medium transition duration-200">
+                                        <i class="fa fa-credit-card w-6"></i>
+                                        <span class="ml-3">我的钱包</span>
+                                    </a>
+                                    <a href="#settings" class="flex items-center p-3 hover:bg-light rounded-lg text-gray-700 font-medium transition duration-200">
+                                        <i class="fa fa-cog w-6"></i>
+                                        <span class="ml-3">设置</span>
+                                    </a>
+                                    <a href="#" class="flex items-center p-3 hover:bg-light rounded-lg text-gray-700 font-medium transition duration-200">
+                                        <i class="fa fa-question-circle-o w-6"></i>
+                                        <span class="ml-3">帮助中心</span>
+                                    </a>
+                                    <a href="#" class="flex items-center p-3 hover:bg-light rounded-lg text-gray-700 font-medium transition duration-200">
+                                        <i class="fa fa-file-text-o w-6"></i>
+                                        <span class="ml-3">用户协议</span>
+                                    </a>
+                                    <a href="#" class="flex items-center p-3 hover:bg-light rounded-lg text-gray-700 font-medium transition duration-200">
+                                        <i class="fa fa-shield w-6"></i>
+                                        <span class="ml-3">隐私协议</span>
+                                    </a>
+                                    <div class="border-t border-gray-100 my-2"></div>
+                                    <a href="#" id="profileLogout" class="flex items-center p-3 hover:bg-light rounded-lg text-red-600 font-medium transition duration-200">
+                                        <i class="fa fa-sign-out w-6"></i>
+                                        <span class="ml-3">退出登录</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧：个人信息编辑 -->
+                        <div class="lg:col-span-3">
+                            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                                <h2 class="text-xl font-bold mb-6">编辑个人信息</h2>
+                                
+                                <form id="profileForm" class="space-y-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label for="profileFullName" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                                            <input type="text" id="profileFullName" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" value="健身爱好者">
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="profileAge" class="block text-sm font-medium text-gray-700 mb-1">年龄</label>
+                                            <input type="number" id="profileAge" min="1" max="120" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" value="25">
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="profileWeight" class="block text-sm font-medium text-gray-700 mb-1">体重(kg)</label>
+                                            <input type="number" id="profileWeight" min="1" max="300" step="0.1" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" value="65.5">
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="profileHeight" class="block text-sm font-medium text-gray-700 mb-1">身高(cm)</label>
+                                            <input type="number" id="profileHeight" min="50" max="250" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" value="175">
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="profileGoal" class="block text-sm font-medium text-gray-700 mb-1">健身目标</label>
+                                            <select id="profileGoal" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                                <option value="lose">减重</option>
+                                                <option value="gain">增重</option>
+                                                <option value="health">养生</option>
+                                                <option value="fitness" selected>健体</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="profileLevel" class="block text-sm font-medium text-gray-700 mb-1">健身水平</label>
+                                            <select id="profileLevel" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                                <option value="beginner">初学者</option>
+                                                <option value="intermediate" selected>中级</option>
+                                                <option value="advanced">高级</option>
+                                                <option value="expert">专业</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="profileBio" class="block text-sm font-medium text-gray-700 mb-1">个人简介</label>
+                                        <textarea id="profileBio" rows="4" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">热爱健身，希望通过sport-pp记录自己的健身 journey，与大家一起进步！</textarea>
+                                    </div>
+                                    
+                                    <div class="flex justify-end">
+                                        <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200">
+                                            保存修改
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- 健康数据 -->
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h2 class="text-xl font-bold mb-6">健康数据</h2>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div class="bg-light rounded-xl p-5 text-center">
+                                        <p class="text-gray-500 text-sm">BMI指数</p>
+                                        <h3 class="text-3xl font-bold mt-2 mb-1">21.3</h3>
+                                        <p class="text-xs text-green-600">正常范围</p>
+                                    </div>
+                                    
+                                    <div class="bg-light rounded-xl p-5 text-center">
+                                        <p class="text-gray-500 text-sm">体脂率</p>
+                                        <h3 class="text-3xl font-bold mt-2 mb-1">18%</h3>
+                                        <p class="text-xs text-green-600">健康范围</p>
+                                    </div>
+                                    
+                                    <div class="bg-light rounded-xl p-5 text-center">
+                                        <p class="text-gray-500 text-sm">日均步数</p>
+                                        <h3 class="text-3xl font-bold mt-2 mb-1">8,765</h3>
+                                        <p class="text-xs text-yellow-600">接近目标</p>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="font-bold text-lg mb-4">体重变化趋势</h3>
+                                    <div class="bg-white rounded-xl p-4 shadow-sm">
+                                        <canvas id="weightChart" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 我的钱包部分 -->
+            <section id="wallet" class="py-12 md:py-20 hidden">
+                <div class="container mx-auto px-4">
+                    <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                        <h2 class="text-xl font-bold mb-6">我的钱包</h2>
+                        
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                            <div>
+                                <p class="text-gray-500">当前余额</p>
+                                <h3 class="text-3xl font-bold mt-1">$25.50</h3>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex space-x-3">
+                                <button class="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary/90 transition duration-200 flex items-center">
+                                    <i class="fa fa-plus mr-2"></i> 充值
+                                </button>
+                                <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg shadow-sm hover:bg-light transition duration-200 flex items-center">
+                                    <i class="fa fa-minus mr-2"></i> 提现
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-gray-100 pt-6">
+                            <h3 class="font-bold text-lg mb-4">交易记录</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center p-3 hover:bg-light rounded-lg transition duration-200">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                                            <i class="fa fa-credit-card"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">充值</h4>
+                                            <p class="text-xs text-gray-500">2023-06-10 14:30</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-bold text-green-600">+$50.00</p>
+                                </div>
+                                
+                                <div class="flex justify-between items-center p-3 hover:bg-light rounded-lg transition duration-200">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                                            <i class="fa fa-file-text-o"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">健康报告生成</h4>
+                                            <p class="text-xs text-gray-500">2023-06-08 09:15</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-bold text-red-600">-$3.99</p>
+                                </div>
+                                
+                                <div class="flex justify-between items-center p-3 hover:bg-light rounded-lg transition duration-200">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                                            <i class="fa fa-rocket"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">AI健身搭子订阅</h4>
+                                            <p class="text-xs text-gray-500">2023-06-01 18:45</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-bold text-red-600">-$9.99</p>
+                                </div>
+                                
+                                <div class="flex justify-between items-center p-3 hover:bg-light rounded-lg transition duration-200">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                                            <i class="fa fa-bullhorn"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">动态推广</h4>
+                                            <p class="text-xs text-gray-500">2023-05-28 11:20</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-bold text-red-600">-$2.99</p>
+                                </div>
+                                
+                                <div class="flex justify-between items-center p-3 hover:bg-light rounded-lg transition duration-200">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                                            <i class="fa fa-trophy"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">比赛奖金</h4>
+                                            <p class="text-xs text-gray-500">2023-05-20 16:50</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-bold text-green-600">+$12.48</p>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-6">
+                                <button class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-light transition duration-200">
+                                    查看更多记录 <i class="fa fa-arrow-down ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 会员订阅 -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-lg mb-4">会员订阅</h3>
+                            
+                            <div class="border border-gray-200 rounded-lg p-4 mb-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-medium">AI健身搭子</h4>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">已订阅</span>
+                                </div>
+                                <p class="text-sm text-gray-500 mb-3">每月自动续费 · 随时取消</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold text-primary">$9.99/月</span>
+                                    <button class="text-sm text-primary hover:text-primary/80">取消订阅</button>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full py-2 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary/5 transition duration-200">
+                                查看更多订阅服务
+                            </button>
+                        </div>
+                        
+                        <!-- 支付方式 -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-lg">支付方式</h3>
+                                <button class="text-sm text-primary hover:text-primary/80 font-medium">
+                                    添加新卡 <i class="fa fa-plus ml-1"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:border-primary transition duration-200 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i class="fa fa-cc-visa text-2xl text-blue-600 mr-3"></i>
+                                        <div>
+                                            <h4 class="font-medium">Visa **** 4589</h4>
+                                            <p class="text-xs text-gray-500">有效期至 12/25</p>
+                                        </div>
+                                    </div>
+                                    <i class="fa fa-check-circle text-primary"></i>
+                                </div>
+                                
+                                <div class="border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:border-primary transition duration-200 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i class="fa fa-cc-mastercard text-2xl text-red-600 mr-3"></i>
+                                        <div>
+                                            <h4 class="font-medium">MasterCard **** 7821</h4>
+                                            <p class="text-xs text-gray-500">有效期至 06/24</p>
+                                        </div>
+                                    </div>
+                                    <i class="fa fa-circle-o text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="bg-dark text-white py-12">
+            <div class="container mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div>
+                        <div class="flex items-center mb-4">
+                            <i class="fa fa-heartbeat text-2xl text-secondary mr-2"></i>
+                            <span class="text-xl font-bold">sport-pp</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">您的专属健身伙伴，帮助您达成健身目标，享受健康生活。</p>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-200">
+                                <i class="fa fa-facebook"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-200">
+                                <i class="fa fa-twitter"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-200">
+                                <i class="fa fa-instagram"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-200">
+                                <i class="fa fa-youtube-play"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-lg font-bold mb-4">功能</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#home" class="text-gray-400 hover:text-white transition duration-200 text-sm">首页</a></li>
+                            <li><a href="#community" class="text-gray-400 hover:text-white transition duration-200 text-sm">社区</a></li>
+                            <li><a href="#challenges" class="text-gray-400 hover:text-white transition duration-200 text-sm">比赛</a></li>
+                            <li><a href="#ai-coach" class="text-gray-400 hover:text-white transition duration-200 text-sm">AI健身搭子</a></li>
+                            <li><a href="#profile" class="text-gray-400 hover:text-white transition duration-200 text-sm">个人中心</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-lg font-bold mb-4">支持</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-200 text-sm">帮助中心</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-200 text-sm">联系我们</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-200 text-sm">用户协议</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-200 text-sm">隐私政策</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-200 text-sm">常见问题</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-lg font-bold mb-4">下载应用</h4>
+                        <p class="text-gray-400 text-sm mb-4">扫描二维码下载sport-pp移动应用</p>
+                        <div class="bg-white p-2 inline-block rounded-lg mb-4">
+                            <img src="https://picsum.photos/120/120?random=50" alt="下载二维码" class="w-24 h-24">
+                        </div>
+                        <div class="space-y-2">
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-200 text-sm flex items-center">
+                                <i class="fa fa-apple mr-2"></i> App Store
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-200 text-sm flex items-center">
+                                <i class="fa fa-android mr-2"></i> Google Play
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                    <p>&copy; 2023 sport-pp. 保留所有权利。</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- 支付模态框 - 通用 -->
+    <div id="paymentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
+            <div class="text-center mb-6">
+                <h2 id="paymentTitle" class="text-xl font-bold text-dark">生成健康报告 - $3.99</h2>
+                <p class="text-gray-500 mt-2">完成支付以获取专业的健康报告</p>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div class="border border-gray-200 rounded-lg p-3 flex items-center cursor-pointer hover:border-primary transition duration-200">
+                    <i class="fa fa-cc-visa text-2xl text-blue-600 mr-3"></i>
+                    <div class="flex-grow">
+                        <h4 class="font-medium">Visa **** 4589</h4>
+                        <p class="text-xs text-gray-500">有效期至 12/25</p>
+                    </div>
+                    <i class="fa fa-check-circle text-primary"></i>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg p-3 flex items-center cursor-pointer hover:border-primary transition duration-200">
+                    <i class="fa fa-cc-mastercard text-2xl text-red-600 mr-3"></i>
+                    <div class="flex-grow">
+                        <h4 class="font-medium">MasterCard **** 7821</h4>
+                        <p class="text-xs text-gray-500">有效期至 06/24</p>
+                    </div>
+                    <i class="fa fa-circle-o text-gray-300"></i>
+                </div>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button id="cancelPayment" class="flex-grow py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-light transition duration-200">
+                    取消
+                </button>
+                <button id="confirmPayment" class="flex-grow py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition duration-200">
+                    确认支付
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 成功提示 -->
+    <div id="successToast" class="fixed bottom-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center">
+        <i class="fa fa-check-circle mr-2"></i>
+        <span id="successMessage">操作成功！</span>
+    </div>
+
+    <script>
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 隐藏加载遮罩
+            setTimeout(function() {
+                document.getElementById('loader').classList.add('opacity-0', 'pointer-events-none');
+                document.getElementById('loader').style.transition = 'opacity 0.5s ease';
+            }, 1000);
+            
+            // 登录表单提交
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 获取表单数据
+                const name = document.getElementById('name').value;
+                const age = document.getElementById('age').value;
+                const weight = document.getElementById('weight').value;
+                const goal = document.getElementById('goal').value;
+                
+                // 保存用户信息
+                localStorage.setItem('userName', name);
+                localStorage.setItem('userAge', age);
+                localStorage.setItem('userWeight', weight);
+                localStorage.setItem('userGoal', goal);
+                
+                // 更新页面上的用户信息
+                document.getElementById('userName').textContent = name;
+                document.getElementById('profileName').textContent = name;
+                document.getElementById('profileFullName').value = name;
+                document.getElementById('profileAge').value = age;
+                document.getElementById('profileWeight').value = weight;
+                document.getElementById('profileGoal').value = goal;
+                
+                // 隐藏登录模态框，显示应用
+                document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                
+                // 显示成功提示
+                showSuccessToast('登录成功，欢迎来到sport-pp！');
+                
+                // 初始化图表
+                initCharts();
+            });
+            
+            // 移动端菜单切换
+            document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+                document.getElementById('mobileMenu').classList.toggle('hidden');
+            });
+            
+            // 导航链接切换
+            const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // 移除所有链接的active类
+                    navLinks.forEach(l => l.classList.remove('active', 'text-primary'));
+                    // 给当前点击的链接添加active类
+                    this.classList.add('active', 'text-primary');
+                    
+                    // 隐藏移动端菜单
+                    document.getElementById('mobileMenu').classList.add('hidden');
+                    
+                    // 滚动到对应区域
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // 生成健康报告按钮
+            document.getElementById('generateReportBtn').addEventListener('click', function() {
+                document.getElementById('paymentTitle').textContent = '生成健康报告 - $3.99';
+                document.getElementById('paymentModal').classList.remove('hidden');
+            });
+            
+            // 订阅AI健身搭子
+            document.getElementById('subscribeAI').addEventListener('click', function() {
+                document.getElementById('paymentTitle').textContent = 'AI健身搭子订阅 - $9.99/月';
+                document.getElementById('paymentModal').classList.remove('hidden');
+            });
+            
+            // 取消支付
+            document.getElementById('cancelPayment').addEventListener('click', function() {
+                document.getElementById('paymentModal').classList.add('hidden');
+            });
+            
+            // 确认支付
+            document.getElementById('confirmPayment').addEventListener('click', function() {
+                document.getElementById('paymentModal').classList.add('hidden');
+                showSuccessToast('支付成功！');
+            });
+            
+            // 发送消息
+            document.getElementById('sendMessage').addEventListener('click', function() {
+                sendChatMessage();
+            });
+            
+            // 按Enter发送消息
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+            
+            // 退出登录
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+            document.getElementById('profileLogout').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+            // 个人中心表单提交
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                // 保存修改
+                const name = document.getElementById('profileFullName').value;
+                localStorage.setItem('userName', name);
+                document.getElementById('userName').textContent = name;
+                document.getElementById('profileName').textContent = name;
+                
+                showSuccessToast('个人信息修改成功！');
+            });
+            
+            // 头像上传按钮
+            document.getElementById('changeAvatar').addEventListener('click', function() {
+                // 模拟头像上传
+                const newAvatar = `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`;
+                document.getElementById('userAvatar').src = newAvatar;
+                document.getElementById('profileAvatar').src = newAvatar;
+                showSuccessToast('头像更新成功！');
+            });
+        });
+        
+        // 发送聊天消息
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const chatMessages = document.getElementById('chatMessages');
+                
+                // 添加用户消息
+                const userMessageHtml = `
+                    <div class="flex space-x-3 justify-end">
+                        <div class="max-w-[80%]">
+                            <p class="bg-primary text-white rounded-lg rounded-tr-none p-3 text-sm">
+                                ${message}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1 text-right">${getCurrentTime()}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                            <img src="https://picsum.photos/200/200?random=1" alt="用户头像" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                `;
+                chatMessages.insertAdjacentHTML('beforeend', userMessageHtml);
+                
+                // 清空输入框
+                input.value = '';
+                
+                // 滚动到底部
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // 模拟AI回复
+                setTimeout(function() {
+                    const aiResponses = [
+                        "这个问题很好！我建议您可以尝试...",
+                        "根据您的情况，我推荐您...",
+                        "您的想法很正确，继续保持！另外，您还可以...",
+                        "关于这个，有几个关键点需要注意...",
+                        "您的坚持很令人敬佩！针对您的问题，我有一些建议..."
+                    ];
+                    const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+                    
+                    const aiMessageHtml = `
+                        <div class="flex space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                <i class="fa fa-robot text-sm"></i>
+                            </div>
+                            <div class="max-w-[80%]">
+                                <p class="bg-light rounded-lg rounded-tl-none p-3 text-sm">
+                                    ${randomResponse}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">${getCurrentTime()}</p>
+                            </div>
+                        </div>
+                    `;
+                    chatMessages.insertAdjacentHTML('beforeend', aiMessageHtml);
+                    
+                    // 滚动到底部
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 1000);
+            }
+        }
+        
+        // 获取当前时间
+        function getCurrentTime() {
+            const now = new Date();
+            return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        // 显示成功提示
+        function showSuccessToast(message) {
+            const toast = document.getElementById('successToast');
+            const messageElement = document.getElementById('successMessage');
+            
+            messageElement.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(function() {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+        
+        // 退出登录
+        function logout() {
+            // 清除本地存储
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userAge');
+            localStorage.removeItem('userWeight');
+            localStorage.removeItem('userGoal');
+            
+            // 隐藏应用，显示登录模态框
+            document.getElementById('app').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
+            
+            // 重置登录表单
+            document.getElementById('loginForm').reset();
+        }
+        
+        // 初始化图表
+        function initCharts() {
+            // 活动趋势图表
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    datasets: [{
+                        label: '卡路里',
+                        data: [250, 320, 180, 450, 380, 520, 310],
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: '运动时间(分钟)',
+                        data: [30, 45, 20, 60, 50, 75, 40],
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 体重变化图表
+            const weightCtx = document.getElementById('weightChart').getContext('2d');
+            new Chart(weightCtx, {
+                type: 'line',
+                data: {
+                    labels: ['5月1日', '5月8日', '5月15日', '5月22日', '5月29日', '6月5日', '6月12日'],
+                    datasets: [{
+                        label: '体重(kg)',
+                        data: [68.5, 67.8, 67.2, 66.5, 66.0, 65.8, 65.5],
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#F59E0B'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 64,
+                            max: 70
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
